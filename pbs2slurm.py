@@ -224,35 +224,54 @@ def fix_jobarray(pbs_directives):
 def fix_resource_list(pbs_directives):
     """resource lists were very complicated in the qsub wrapper, which would
     have overridden the resource lists specified in pbs directives. This
-    function only looks for walltime and prints a warning"""
+    function only looks for walltime, nodes, ppn(cpu count), mem, and qos."""
     l_re = re.compile(r'^#PBS[ \t]*-l[ \t]*\b([\S:=, \t]*)\b[^\n]*', re.M)
     l_m  = l_re.search(pbs_directives)
+    
     wt_re = re.compile(r'walltime=(\d+):(\d+):(\d+)')
+    ppn_re = re.compile(r'ppn=(\d+)')
+    node_re = re.compile(r'nodes=(\d+)')
+    mem_re = re.compile(r'mem=(\d+)')
+
     if l_m is not None:
         def _repl(m):
+            final_str = ""
             resources = m.group(1)
-            if not "walltime" in resources:
-                return ""
-            else:
-                wt_m = wt_re.search(resources)
-                if wt_m is None:
-                    return ""
-                h = wt_m.group(1)
-                m = wt_m.group(2)
-                if len(m) == 1:
-                    m += "0"
-                elif len(m) > 2:
-                    return ""
-                s = wt_m.group(3)
-                if len(s) == 1:
-                    s += "0"
-                elif len(s) > 2:
-                    return ""
-                return "#SBATCH --time={}:{}:{}".format(h, m, s)
-        pbs_directives = l_re.sub(_repl, pbs_directives)
-   
-    return pbs_directives
 
+            wt_match = wt_re.search(resources)
+            if wt_match is not None:
+                h = wt_match.group(1)
+                m = wt_match.group(2)
+                s = wt_match.group(3)
+                if final_str is not "":
+                    final_str += "\n"
+                final_str += "#SBATCH --time={}:{}:{}".format(h, m, s)
+
+            ppn_match = ppn_re.search(resources)
+            if ppn_match is not None:
+                c = ppn_match.group(1)
+                if final_str is not "":
+                    final_str += "\n"
+                final_str += "#SBATCH -n {}".format(c)
+
+            node_match = node_re.search(resources)
+            if node_match is not None:
+                c = node_match.group(1)
+                if final_str is not "":
+                    final_str += "\n"
+                final_str += "#SBATCH -N {}".format(c)
+
+
+            mem_match = mem_re.search(resources)
+            if mem_match is not None:
+                mb = mem_match.group(1)
+                if final_str is not "":
+                    final_str += "\n"
+                final_str += "#SBATCH --mem {}M".format(mb)
+            return final_str
+
+        pbs_directives = l_re.sub(_repl, pbs_directives)
+    return pbs_directives
 
 def fix_queue(pbs_directives):
     """drop all occurences of -q"""
