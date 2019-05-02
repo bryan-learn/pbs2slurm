@@ -1,5 +1,4 @@
-#! /usr/local/bin/python
-# vim: set ft=python :
+#! /usr/bin/python
 """
 Translates PBS batch script to Slurm.
 
