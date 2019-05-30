@@ -1,3 +1,5 @@
+** This repository is no longer maintained. Forked to: https://github.com/pscedu/pbs2slurm **
+
 Translating batch scripts with `#PBS` directives into Slurm scripts with `#SBATCH` directives
 =============================================================================================
 `pbs2slurm.py` translates PBS type batch scripts to Slurm. It translates directives
